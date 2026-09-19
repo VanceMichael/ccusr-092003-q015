@@ -1,0 +1,19 @@
+{
+  "schema_version": "1",
+  "domain": "东盟商品输华准入接续",
+  "required_fields": [
+    "supplier_ref",
+    "facility_ref",
+    "product_category",
+    "application_revision",
+    "approval_scope",
+    "shipment_ref"
+  ],
+  "time_format": "ISO 8601 with offset",
+  "sample": {
+    "supplier_ref": "SUPPLIER-DEMO",
+    "facility_ref": "FACTORY-A",
+    "product_category": "frozen-fruit",
+    "application_revision": 2
+  }
+}
