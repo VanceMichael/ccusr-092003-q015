@@ -1,6 +1,116 @@
 {
-  "supplier_ref": "SUPPLIER-DEMO",
-  "facility_ref": "FACTORY-A",
-  "product_category": "frozen-fruit",
-  "application_revision": 2
+  "description": "本地示例：泰国冷冻榴莲与越南燕窝两条准入接续线，均为虚构主体。按顺序调用对应 HTTP 接口即可复现。",
+  "categories": [
+    {
+      "category_code": "frozen-fruit",
+      "name": "冷冻水果",
+      "hs_codes": ["0811"]
+    },
+    {
+      "category_code": "edible-birdnest",
+      "name": "食用燕窝",
+      "hs_codes": ["0410"]
+    }
+  ],
+  "authorities": [
+    { "authority_ref": "AUTH-TH-DLD", "name": "泰国畜牧发展厅（示例）", "country_code": "TH" },
+    { "authority_ref": "AUTH-VN-DAV", "name": "越南动物卫生署（示例）", "country_code": "VN" }
+  ],
+  "suppliers": [
+    {
+      "supplier_ref": "SUPPLIER-TH-DURIAN",
+      "display_name": "泰国冷冻榴莲工厂示例",
+      "country_code": "TH",
+      "access_token": "demo-token-th-durian"
+    },
+    {
+      "supplier_ref": "SUPPLIER-VN-NEST",
+      "display_name": "越南燕窝企业示例",
+      "country_code": "VN",
+      "access_token": "demo-token-vn-nest"
+    }
+  ],
+  "facilities": [
+    {
+      "facility_ref": "FACTORY-TH-01",
+      "supplier_ref": "SUPPLIER-TH-DURIAN",
+      "name": "尖竹汶冷冻加工厂示例",
+      "country_code": "TH"
+    },
+    {
+      "facility_ref": "FACTORY-VN-01",
+      "supplier_ref": "SUPPLIER-VN-NEST",
+      "name": "庆和燕窝加工厂示例",
+      "country_code": "VN"
+    }
+  ],
+  "material_submissions": [
+    {
+      "supplier_ref": "SUPPLIER-TH-DURIAN",
+      "facility_ref": "FACTORY-TH-01",
+      "product_category": "frozen-fruit",
+      "doc_type": "haccp-certificate",
+      "content_hash": "sha256:7c2f5e9a1b4d6f80a3e5c7d9b1f2a4d6e8c0b3a5d7f91e3c5a7d9f1b3e5c7d9",
+      "source": { "channel": "expo", "source_ref": "EXPO-2026-BOOTH-TH-17" }
+    },
+    {
+      "_note": "展会与企业重复递交同一份 HACCP：content_hash 相同，合并来源、不生成新版本",
+      "supplier_ref": "SUPPLIER-TH-DURIAN",
+      "facility_ref": "FACTORY-TH-01",
+      "product_category": "frozen-fruit",
+      "doc_type": "haccp-certificate",
+      "content_hash": "sha256:7c2f5e9a1b4d6f80a3e5c7d9b1f2a4d6e8c0b3a5d7f91e3c5a7d9f1b3e5c7d9",
+      "source": { "channel": "enterprise", "source_ref": "mail:2026-09-20" }
+    }
+  ],
+  "approval_grants": [
+    {
+      "_note": "首版批准仅覆盖冷冻榴莲果肉；整果榴莲超出范围，转单会被门禁拒绝",
+      "facility_ref": "FACTORY-TH-01",
+      "product_category": "frozen-fruit",
+      "authority_ref": "AUTH-TH-DLD",
+      "scope": { "hs_codes": ["0811"], "forms": ["frozen-pulp"] },
+      "version": 1
+    },
+    {
+      "_note": "许可扩围产生版本 2；只影响版本生效后申报的新批次",
+      "facility_ref": "FACTORY-TH-01",
+      "product_category": "frozen-fruit",
+      "authority_ref": "AUTH-TH-DLD",
+      "scope": { "hs_codes": ["0811"], "forms": ["frozen-pulp", "whole-frozen"] },
+      "version": 2
+    }
+  ],
+  "intentions": [
+    {
+      "buyer_ref": "BUYER-CN-A",
+      "supplier_ref": "SUPPLIER-TH-DURIAN",
+      "facility_ref": "FACTORY-TH-01",
+      "product_category": "frozen-fruit",
+      "hs_code": "08119000",
+      "form": "frozen-pulp",
+      "quantity": 18,
+      "expected_path": "confirm -> convert -> declare -> clear（可履约）"
+    },
+    {
+      "buyer_ref": "BUYER-CN-B",
+      "supplier_ref": "SUPPLIER-TH-DURIAN",
+      "facility_ref": "FACTORY-TH-01",
+      "product_category": "frozen-fruit",
+      "hs_code": "08119000",
+      "form": "whole-frozen",
+      "quantity": 5,
+      "expected_path": "首版批准下 convert 返回 409 OUT_OF_APPROVAL_SCOPE"
+    },
+    {
+      "buyer_ref": "BUYER-CN-C",
+      "supplier_ref": "SUPPLIER-VN-NEST",
+      "facility_ref": "FACTORY-VN-01",
+      "product_category": "edible-birdnest",
+      "hs_code": "04100090",
+      "form": "cleaned",
+      "quantity": 200,
+      "expected_path": "设施未注册，convert 返回 409 FACILITY_NOT_REGISTERED"
+    }
+  ]
 }

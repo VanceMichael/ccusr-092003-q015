@@ -1,6 +1,17 @@
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "domain": "东盟商品输华准入接续",
+  "time_format": "ISO 8601 with offset",
+  "artifact_policy": "原始材料只保存受控引用 source_ref 或 sha256 摘要 content_hash，不保存原件内容",
+  "id_convention": "由服务端生成，按实体带前缀：reg_ / mat_ / req_ / appr_ / int_ / ord_ / bat_",
+  "enums": {
+    "source_channel": ["expo", "enterprise"],
+    "material_status": ["submitted", "under_review", "accepted", "rejected"],
+    "registration_status": ["pending", "registered", "suspended", "revoked"],
+    "approval_status": ["active", "superseded", "revoked"],
+    "intention_status": ["negotiating", "confirmed", "converted", "withdrawn"],
+    "batch_status": ["declared", "cleared", "rejected"]
+  },
   "required_fields": [
     "supplier_ref",
     "facility_ref",
@@ -9,10 +20,105 @@
     "approval_scope",
     "shipment_ref"
   ],
-  "time_format": "ISO 8601 with offset",
+  "entities": {
+    "product_category": {
+      "key": "category_code",
+      "fields": ["category_code", "name", "hs_codes"]
+    },
+    "competent_authority": {
+      "key": "authority_ref",
+      "fields": ["authority_ref", "name", "country_code"]
+    },
+    "supplier": {
+      "key": "supplier_ref",
+      "fields": ["supplier_ref", "display_name", "country_code", "access_token"],
+      "note": "access_token 为供应商门户 Bearer 令牌，仅创建/更新时可指定"
+    },
+    "facility": {
+      "key": "facility_ref",
+      "fields": ["facility_ref", "supplier_ref", "name", "country_code"]
+    },
+    "facility_registration": {
+      "fields": ["facility_ref", "authority_ref", "status", "registered_at"],
+      "note": "只有 status=registered 的设施可承载有效批准与订单"
+    },
+    "material": {
+      "fields": [
+        "material_id",
+        "supplier_ref",
+        "facility_ref",
+        "product_category",
+        "doc_type",
+        "content_hash",
+        "revision",
+        "status",
+        "sources[]"
+      ],
+      "dedup": "同一 supplier+facility+category+doc_type+content_hash 视为同一份材料，重复递交只追加 sources",
+      "sources_fields": ["source_channel", "source_ref", "received_at"]
+    },
+    "supplement_request": {
+      "fields": ["request_id", "material_id", "detail", "status", "created_at", "resolved_at"]
+    },
+    "approval": {
+      "fields": [
+        "approval_id",
+        "facility_ref",
+        "product_category",
+        "authority_ref",
+        "scope",
+        "version",
+        "effective_from",
+        "effective_until",
+        "status"
+      ],
+      "scope_shape": { "hs_codes": ["0811"], "forms": ["frozen-pulp"] },
+      "versioning": "重新授予时旧版本置 superseded，version+1；已申报批次冻结旧 approval_id 不变",
+      "hs_matching": "scope.hs_codes 允许 4/6 位上位税目前缀覆盖（0811 覆盖 08119000）"
+    },
+    "purchase_intention": {
+      "fields": [
+        "intention_id",
+        "buyer_ref",
+        "supplier_ref",
+        "facility_ref",
+        "product_category",
+        "hs_code",
+        "form",
+        "quantity",
+        "status"
+      ],
+      "state_machine": "negotiating -> confirmed -> converted; negotiating -> withdrawn",
+      "guard_convert": "必须：设施 status=registered 且存在覆盖 hs_code+form 的 active 批准，否则返回 409"
+    },
+    "order": {
+      "fields": ["order_id", "intention_id", "approval_id", "status"],
+      "note": "approval_id 为转单时解析到的批准版本"
+    },
+    "customs_batch": {
+      "fields": [
+        "batch_ref",
+        "order_id",
+        "approval_id",
+        "hs_code",
+        "form",
+        "quantity",
+        "status",
+        "declared_at",
+        "cleared_at"
+      ],
+      "snapshot": "申报时按当时有效批准校验并冻结 approval_id；累计申报数量不得超过意向数量"
+    }
+  },
+  "stats_buckets": {
+    "discussions": "negotiating/confirmed 意向数与洽谈买方数（见过采购商）",
+    "admitted_enterprises": "持有效批准的供应商数与有效批准数（获准输华）",
+    "actual_customs": "已清关批次、涉及供应商、已转订单数（实际通关）",
+    "repeat_purchases": "同一买方-供应商对发生实际清关的订单 >=2 的复购口径"
+  },
   "sample": {
-    "supplier_ref": "SUPPLIER-DEMO",
-    "facility_ref": "FACTORY-A",
+    "supplier_ref": "SUPPLIER-TH-DURIAN",
+    "facility_ref": "FACTORY-TH-01",
     "product_category": "frozen-fruit",
     "application_revision": 2
   }
