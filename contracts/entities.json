@@ -1,5 +1,5 @@
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "domain": "东盟商品输华准入接续",
   "required_fields": [
     "supplier_ref",
@@ -10,10 +10,51 @@
     "shipment_ref"
   ],
   "time_format": "ISO 8601 with offset",
+  "identifier_format": "外部主体一律使用引用编号（ref），不保存真实身份信息；门户密钥仅保存 sha256 摘要，原始材料仅保存受控引用 document_ref 与 document_sha256",
+  "stages": [
+    {"key": "talk", "name": "洽谈", "evidence": "purchase_intentions.status=open", "note": "见过采购商只是线索，不代表获准"},
+    {"key": "approved", "name": "获准企业", "evidence": "facilities.registration_status=registered 且存在覆盖具体货物且在生效窗内的 approvals", "note": "按设施×类别×范围项判断，不按企业笼统判断"},
+    {"key": "fulfilled", "name": "可履约订单", "evidence": "fulfilled_orders", "note": "仅由已确认意向在准入闸门通过时生成"},
+    {"key": "customs", "name": "实际通关", "evidence": "customs_shipments.status=cleared"},
+    {"key": "repeat", "name": "复购", "evidence": "同一 buyer_ref 下 cleared 批次 >= 2"}
+  ],
+  "gate": {
+    "path": "GET /gate",
+    "outcomes": [
+      {"status": "facility_unregistered", "next_action": "await_facility_registration"},
+      {"status": "approval_not_in_force", "next_action": "submit_documents | supplement_documents | await_approval"},
+      {"status": "ready", "next_action": "arrange_first_shipment"}
+    ],
+    "rule": "status != ready 时，POST /intentions/:ref/fulfill 与 POST /shipments 必须拒绝"
+  },
+  "entities": {
+    "product_categories": ["code", "name", "default_authority_code"],
+    "competent_authorities": ["code", "name"],
+    "suppliers": ["ref", "label", "secret_sha256"],
+    "facilities": ["ref", "supplier_ref", "product_category", "registration_status", "registered_at"],
+    "document_bundles": ["supplier_ref", "facility_ref", "product_category", "application_revision(current_revision_no)"],
+    "document_revisions": ["revision_no", "digest_sha256", "submitted_via"],
+    "document_sources": ["source_kind(expo|enterprise)", "source_ref", "received_at"],
+    "supplement_requests": ["item_code", "detail", "status(requested|submitted|waived)"],
+    "approvals": ["facility_ref", "product_category", "authority_code", "approval_scope(scope_items[])", "effective_from", "effective_to", "supersedes_id"],
+    "purchase_intentions": ["ref", "supplier_ref", "facility_ref", "product_category", "scope_item", "buyer_ref", "quantity_kg", "status(open|confirmed|withdrawn)"],
+    "fulfilled_orders": ["ref", "intention_ref", "approval_id", "scope_item", "quantity_kg"],
+    "customs_shipments": ["shipment_ref", "order_ref", "approval_id", "planned_at", "status(booked|cleared)"]
+  },
+  "invariants": [
+    "设施未注册或货物超出批准范围，商机不得转成可履约订单",
+    "重复递交内容相同的材料只合并来源（expo/enterprise 各自留痕），不提升 application_revision",
+    "许可更新通过带新生效窗的 approvals 新行表达；已生成订单/已订舱批次固化 approval_id 快照，旧批次不受影响",
+    "订舱按 planned_at 重新过闸：许可更新只影响计划日期落入新窗口的新批次",
+    "买方退出仅对 status=open 的意向生效；已确认意向拒绝退出（buyer_commitment_locked）",
+    "平台统计分桶互不混用：洽谈数、获准企业数、可履约订单数、实际通关批次/企业数、复购买方/批次"
+  ],
   "sample": {
     "supplier_ref": "SUPPLIER-DEMO",
     "facility_ref": "FACTORY-A",
     "product_category": "frozen-fruit",
-    "application_revision": 2
+    "application_revision": 2,
+    "approval_scope": ["frozen-durian-pulp"],
+    "shipment_ref": "SHP-DEMO-1"
   }
 }

@@ -1,6 +1,73 @@
 {
-  "supplier_ref": "SUPPLIER-DEMO",
-  "facility_ref": "FACTORY-A",
-  "product_category": "frozen-fruit",
-  "application_revision": 2
+  "scenario": "泰国冷冻榴莲工厂输华接续示例（引用编号均为演示值）",
+  "note": "洽谈线索不等于获准；设施未注册或货物超出 approval_scope 时不能转成可履约订单",
+  "category": { "code": "frozen-fruit", "name": "冷冻水果" },
+  "authority": { "code": "GACC", "name": "海关总署" },
+  "supplier": { "ref": "SUPPLIER-DEMO", "label": "泰国冷冻榴莲工厂（演示）" },
+  "facility": {
+    "ref": "FACTORY-A",
+    "supplier_ref": "SUPPLIER-DEMO",
+    "product_category": "frozen-fruit",
+    "registration_status": "registered"
+  },
+  "document_submission_v1": {
+    "supplier_ref": "SUPPLIER-DEMO",
+    "facility_ref": "FACTORY-A",
+    "product_category": "frozen-fruit",
+    "submitted_via": "expo",
+    "source_ref": "EXPO-2026-HALL-3",
+    "documents": [
+      {
+        "item_code": "factory-questionnaire",
+        "document_ref": "DOC-Q",
+        "document_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "duplicate_submission_from_enterprise": {
+    "submitted_via": "enterprise",
+    "source_ref": "ENTERPRISE-PORTAL",
+    "expectation": "内容相同：application_revision 保持不变，仅在 document_sources 增加来源留痕"
+  },
+  "supplement_request": { "item_code": "cold-chain-flow", "detail": "需补充冷链温控流程" },
+  "application_revision": 2,
+  "approval_v1": {
+    "facility_ref": "FACTORY-A",
+    "product_category": "frozen-fruit",
+    "authority_code": "GACC",
+    "approval_scope": ["frozen-durian-pulp"],
+    "effective_from": "2026-01-01T00:00:00Z",
+    "effective_to": "2026-03-01T00:00:00Z"
+  },
+  "approval_v2_expanded": {
+    "facility_ref": "FACTORY-A",
+    "product_category": "frozen-fruit",
+    "authority_code": "GACC",
+    "approval_scope": ["frozen-durian-pulp", "frozen-monthong-whole"],
+    "effective_from": "2026-03-01T00:00:00Z",
+    "effective_to": null,
+    "note": "许可更新只影响计划日期落入新窗口的新批次，旧批次保留 approval_v1 快照"
+  },
+  "intention_in_scope": {
+    "ref": "INT-DEMO-1",
+    "supplier_ref": "SUPPLIER-DEMO",
+    "facility_ref": "FACTORY-A",
+    "product_category": "frozen-fruit",
+    "scope_item": "frozen-durian-pulp",
+    "buyer_ref": "BUYER-CN-DEMO",
+    "quantity_kg": 1200,
+    "status": "confirmed"
+  },
+  "intention_out_of_scope": {
+    "ref": "INT-DEMO-2",
+    "scope_item": "frozen-monthong-whole",
+    "before_2026-03-01": "fulfill/订舱被拒绝：approval_not_in_force / shipment_outside_approval"
+  },
+  "shipment": {
+    "shipment_ref": "SHP-DEMO-1",
+    "order_ref": "ORD-DEMO-1",
+    "planned_at": "2026-02-10T08:00:00Z",
+    "status": "cleared",
+    "approval_id_snapshot": "approval_v1"
+  }
 }
